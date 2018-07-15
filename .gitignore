@@ -2,4 +2,3 @@ deploy.bat
 node_modules
 archive
 package-lock.json
-package.json
