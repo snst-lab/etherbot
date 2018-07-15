@@ -397,7 +397,7 @@
                             array.push(key.id);
                       });
                       var idx = array.indexOf(id);
-                      list[idx] = {"id":id,"chain":list[idx].chain,"name":name,"price":price};
+                      list[idx] = {"id":id,"chain":list[idx].chain,"name":name,"address":address,"price":price};
                       localStorage.setItem("invoice", JSON.stringify(list));
                       model.setList();
                 }
@@ -409,7 +409,7 @@
           
             addList: function(name,chain,address,price){
                 var id = util.randomString(8);
-                var newInvoice = {"id":id,"name":name,"chain":chain,"address":address,"price":price};
+                var newInvoice = {"id":id,"chain":chain,"name":name,"address":address,"price":price};
               
                 if (typeof localStorage.invoice !== 'undefined') {
                       var list = JSON.parse(localStorage.getItem("invoice"));
