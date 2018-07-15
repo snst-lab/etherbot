@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Send Ether</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, height=device-height">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Raleway" />
+    <link rel="stylesheet" href="css/transfer.css">
+</head>
+<body id="transfer">
+    <div id="loading" class="mdl-spinner mdl-js-spinner is-active" style="position:absolute;top:0;bottom:0;left:0;right:0;margin:auto;z-index:10;"></div>
+    <div class="header">
+        <div class="title">Send Ether</div>
+        <div class="menu">
+            <div class="content main">
+                Make a Payment
+            </div>
+            <div class="content list">
+                Recipient List
+            </div>
+            <div class="content history">
+                Transaction History
+            </div>
+            <div class="selector"></div>
+        </div>
+    </div>
+    <div class="body">
+        <div class="main">
+           <div class="form">
+                <div class="input chain" style="margin-top:2rem;">
+                    <label>Chain</label>
+                    <div class="select-wrap">
+                        <select name="chain">
+                            <option value="mainnet">Mainnet</option>
+                            <option value="ropsten">Ropsten</option>
+                            <option value="rinkeby">Rinkeby</option>
+                            <option value="kovan">Kovan</option>
+                        </select>
+                    </div>
+                    <div class="message_alert"></div>
+                </div>
+                <div class="input sender">
+                    <label>Sender's Private Key</label>
+                    <input type="text" placeholder="adb5781108637c38a1b12891d6d856e83bfdde826887b9f4bb35368892e423a7" style="text-indent: 1.5em;">
+                    <img id="qrscan-sender" src="https://pragma-curry.com/wp/wp-content/uploads/2018/07/qr.png" style="position:absolute;width:2rem;height:2rem;margin-top:-5.5rem;margin-left:2rem;"/>
+                    <div class="message_alert"></div>
+                    <div class="info-container" style="display:none;"></div>
+                </div>
+                <div class="input recipient">
+                    <label>Recipient's Address / Scan Invoice</label>
+                    <input type="text" placeholder="0xFa2A634c13d73f9d9A745be8D8Cf7dfe3993f873" style="text-indent: 1.5em;">
+                    <img id="qrscan-recipient" src="https://pragma-curry.com/wp/wp-content/uploads/2018/07/qr.png" style="position:absolute;width:2rem;height:2rem;margin-top:-5.5rem;margin-left:2rem;"/>
+                    <div class="message_alert"></div>
+                </div>
+                <div class="input amount">
+                    <label>Amount</label>
+                    <input type="tel" placeholder="0.01 Ether">
+                    <div class="message_alert"></div>
+                </div>
+                <div class="input gas">
+                    <label>Gas</label>
+                    <input type="tel" placeholder="4 Gwei">
+                    <div class="message_alert"></div>
+                </div>
+                <div class="btn_container">
+                    <div class="btn send-ether" style="display:none;">Send Ether</div>
+                </div>
+            </div>
+            <video id="preview" autoplay="autoplay" class="active" style="transform: scaleX(-1);"></video>
+        </div>
+        <div class="list">
+            <div class="index">
+                <div class="name">Name</div>
+                <div class="address">Recipient</div>
+            </div>
+            <div class="info-container"></div>
+        </div>
+        <div class="history">
+            <div class="info-container"></div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.4/Chart.min.js" defer></script>
+    <script type="text/javascript" src="https://code.getmdl.io/1.3.0/material.min.js" defer></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <script type="text/javascript" src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
+    <script type="text/javascript">
+      
+        var controller = {
+            init: function(){
+                $(".header .menu .main").on("click",()=>{
+                    view.showMain();
+                });
+                $(".header .menu .list").on("click",()=>{
+                    view.showList();
+                });
+                $(".header .menu .history").on("click",()=>{
+                    view.showHistory();
+                });
+                $("#qrscan-sender").on("click",()=>{
+                    controller.qrScanSender();
+                });
+                $("#qrscan-recipient").on("click",()=>{
+                    controller.qrScanRecipient();
+                });
+                $(".body .main .chain select").on("change",()=>{
+                    model.showInfo($('.main .chain select').val(),$('.main .sender input').val());
+                });
+                $(".body .main .sender input").on("blur change",()=>{
+                    model.showInfo($('.main .chain select').val(),$('.main .sender input').val());
+                });   
+                $('.main input').on('change blur',()=>{
+                    validate.transferForm();
+                });
+                $('.main .btn_container .send-ether').on("click",()=>{
+                    model.transfer(
+                      $('.main .chain select').val(),
+                      $('.main .sender input').val(),
+                      $('.main .recipient input').val(),
+                      parseFloat($('.main .amount input').val()),
+                      parseFloat($('.main .gas input').val())
+                    );
+                });
+                controller.swipe(('.body .main'),function(){view.showList();},function(){return false;});
+                controller.swipe(('.body .list'),function(){view.showHistory();},function(){view.showMain();});
+                controller.swipe(('.body .history'),function(){return false;},function(){view.showList();});
+            },
+
+            swipe:function(page,swipeLeft,swipeRight){
+                $(page).on('touchstart', function (event) {
+                    var position = event.originalEvent.changedTouches[0].pageX;
+                    $(page).off('touchend');
+                    $(page).on('touchend',  function (event) {
+                        if (event.originalEvent.changedTouches[0].pageX < position - $(page).width() * 0.25){
+                            swipeLeft();
+                        }
+                        else if(event.originalEvent.changedTouches[0].pageX > position + $(page).width() * 0.25){
+                            swipeRight();
+                        }
+                    });
+                });
+            },
+  
+            setAddressList: function(){
+                $(document).off('click', ".body .list .address");
+                $(document).on('click', ".body .list .address", function(event){
+                      event.preventDefault();
+                      view.setRecipient($(this).text());
+                });
+                $(document).off('click', "i.edit");
+                $(document).on('click', "i.edit", function(event){
+                      event.preventDefault();
+                      $(document).off('click', ".body .list .address");
+                      view.editName($(this).data("address"));
+                });
+                $(document).off('click', "i.delete");
+                $(document).on('click', "i.delete", function(event){
+                      event.preventDefault();
+                      if(confirm('Do you really delete this recipient?')){
+                          var address = $(this).data("address");
+                          view.deleteAddress(address);
+                          setTimeout(()=>{
+                              model.deleteAddress($('[data-address="'+address+'"].address').text());
+                          }, 2000);               
+                      }
+                });
+                $(document).off('click', "i.cancel");
+                $(document).on('click', "i.cancel", function(event){
+                      event.preventDefault();
+                      model.setAddressList();
+                });
+                $(document).off('click', "i.update");
+                $(document).on('click', "i.update", function(event){
+                      event.preventDefault();
+                      const address= $(this).data("address");
+                      model.updateName( $('[data-address="'+address+'"].name').text(), $('[data-address="'+address+'"].address').text());
+                });
+            },
+          
+            qrScanSender: function(){
+                var videoTag = document.getElementById('preview');
+                var scanner = new Instascan.Scanner({ video: videoTag });
+
+                scanner.addListener('scan', function (value) {
+                    scanner.stop();
+                    $('.main .sender input').val(value);
+                    $('.main .form').show('slow');
+                    model.showInfo($('.main .chain select').val(),$('.main .sender input').val());
+                    validate.transferForm();
+                });
+                $("body").off("click");
+                $("body").on("click",()=>{
+                    scanner.stop();
+                    $('.main .form').show('slow');
+                });
+                Instascan.Camera.getCameras()
+                .then(function (cameras) {
+                    if (cameras.length > 0) {
+                        if(typeof cameras[1] !== 'undefined'){
+                            scanner.start(cameras[1]); //BackCamera:cameras[1] 
+                        }else{
+                            scanner.start(cameras[0]); //FrontCamera:cameras[0]
+                        }
+                        $('.main .form').hide('slow');
+                    }
+                    else {
+                        alert('No camera found.');
+                    }
+                })
+                .catch(function(err) {
+                    alert(err);
+                });
+            },
+          
+            qrScanRecipient: function(){
+                var videoTag = document.getElementById('preview');
+                var scanner = new Instascan.Scanner({ video: videoTag ,mirror: false});
+
+                scanner.addListener('scan', function (value) {
+                    scanner.stop();
+                    var query = util.queryParse(value);
+                    if(typeof query['price'] !== 'undefined'){
+                        $('.main .chain select').val(query['chain']);
+                        $('.main .recipient input').val(query['address']);
+                        $('.main .amount input').val(query['price']);
+                    }else{
+                        $('.main .recipient input').val(value);
+                    }
+                    $('.main .form').show('slow');
+                    validate.transferForm();
+                });
+                $("body").off("click");
+                $("body").on("click",()=>{
+                    scanner.stop();
+                    $('.main .form').show('slow');
+                });
+                Instascan.Camera.getCameras()
+                .then(function (cameras) {
+                    if (cameras.length > 0) {
+                        if(typeof cameras[1] !== 'undefined'){
+                            scanner.start(cameras[1]); //BackCamera:cameras[1] 
+                        }else{
+                            scanner.start(cameras[0]); //FrontCamera:cameras[0]
+                        }
+                        $('.main .form').hide('slow');
+                    }
+                    else {
+                        alert('No camera found.');
+                    }
+                })
+                .catch(function(err) {
+                    alert(err);
+                });
+            },
+        };
+
+      
+        var view = {
+            init: function(){
+                $('#loading').hide();
+            },
+
+            showMain:function(){
+                $('body').scrollTop(0);
+                $('.header .selector').animate({'margin-left':'0'},'.1s');
+                $('.body .main').animate({'margin-left':'0'},'.1s');
+                $('.body .list').animate({'margin-left':'100%'},'.1s');
+                $('.body .history').animate({'margin-left':'200%'},'.1s');
+            },
+          
+            showList:function(){
+                $('body').scrollTop(0);
+                $('.header .selector').animate({'margin-left':'33.3333%'},'.1s');
+                $('.body .main').animate({'margin-left':'-100%'},'.1s');
+                $('.body .list').animate({'margin-left':'0'},'.1s');
+                $('.body .history').animate({'margin-left':'100%'},'.1s');
+                $('[data-list-edit]').show();
+                $('[data-list-delete]').show();
+                $('[data-list-cancel]').hide();
+                $('[data-list-confirm]').hide();
+            },
+  
+            showHistory:function(){
+                $('body').scrollTop(0);
+                $('.header .selector').animate({'margin-left':'66.6666%'},'.1s');
+                $('.body .main').animate({'margin-left':'-200%'},'.1s');
+                $('.body .list').animate({'margin-left':'-100%'},'.1s');
+                $('.body .history').animate({'margin-left':'0'},'.1s');
+            },
+          
+            showInfo: function(info){
+                $(".body .main .info-container").hide();
+                $(".body .main .info-container").empty();
+                info.forEach((key)=>{
+                     $(".body .main .info-container").append(
+                         $("<div>").attr({ "class": "info"})
+                             .append($("<div>").attr({ "class": "address" }).text('Address :  ' + key.address))
+                             .append($("<div>").attr({ "class": "balance" }).text('Balance : ' + key.balance + ' Ether'))
+                     );
+                });
+                $(".body .main .info-container").show("slow");
+            },
+          
+            setRecipient: function(address){
+                $(".body .main .recipient input").val(address);
+                view.showMain();
+            },
+          
+            setAddressList: function(addressList){
+                $(".body .list .info-container").empty();
+                addressList.forEach((key)=>{
+                     $(".body .list .info-container").append(
+                         $("<div>").attr({ "class": "info" , "data-address": key.address })
+                             .append($("<div>").attr({ "class": "name", "data-address": key.address }).text(key.name))
+                             .append($("<div>").attr({ "class": "address", "data-address": key.address }).text(key.address))
+                             .append($("<i class='edit mdl-icon-toggle__label material-icons'>edit</i>").attr({"data-address": key.address}))
+                             .append($("<i class='delete mdl-icon-toggle__label material-icons'>delete</i>").attr({"data-address": key.address}))
+                             .append($("<i class='cancel mdl-icon-toggle__label material-icons'>cancel</i>").attr({"data-address": key.address}).css({"display":"none"}))
+                             .append($("<i class='update mdl-icon-toggle__label material-icons'>check_circle</i>").attr({"data-address": key.address}).css({"display":"none"}))
+                     );
+                });
+                $(".list .info .name").attr({"contenteditable": "false"});
+                $(".list .info .address").attr({"contenteditable": "false"});
+                controller.setAddressList();
+            },
+          
+            showTransactionHistory: function(transactionList){
+                $(".body .history .info-container").empty();
+                transactionList.forEach((key)=>{
+                     $(".body .history .info-container").append(
+                         $("<div>").attr({ "class": "info"})
+                             .append($("<div>").attr({ "class": "datetime"}).text(util.unixTimetoDate(key.timeStamp)))
+                             .append($("<div>").attr({ "class": "from"}).text('From: '+key.from))
+                             .append($("<div>").attr({ "class": "to"}).text('To: '+key.to))
+                             .append($("<div>").attr({ "class": "amount"}).text('Amount: '+key.value*10e-19+' Ether'))
+                     );
+                });
+                console.log(transactionList);
+            },
+          
+            editName: function(address){
+                $('i.edit[data-address="'+address+'"]').hide('slow');
+                $('i.delete[data-address="'+address+'"]').hide('slow');
+                $('i.cancel[data-address="'+address+'"]').show('slow');
+                $('i.update[data-address="'+address+'"]').show('slow');
+                $('i.edit[data-address!="'+address+'"]').show('slow');
+                $('i.delete[data-address!="'+address+'"]').show('slow');
+                $('i.cancel[data-address!="'+address+'"]').hide('slow');
+                $('i.update[data-address!="'+address+'"]').hide('slow');
+                $('[data-address="'+address+'"].name').attr({"contenteditable": "true"});
+                $('[data-address!="'+address+'"].name').attr({"contenteditable": "false"});
+            },
+          
+            deleteAddress: function(address){
+                $('.info[data-address="'+address+'"]').children().hide('slow');
+                $('.info[data-address="'+address+'"]').animate({'height':0},100);
+            }
+        };
+
+
+        var model = {
+            ether:{},
+          
+            init: function(ether){
+                model.ether = ether;
+                model.setAddressList();
+                model.showTransactionHistory();
+            },
+          
+            showInfo: function(chain,secret){
+                const account  = model.ether.getAccountFromSecret(chain,secret);
+                if(account){
+                    view.showInfo([{'address':account.address,'balance':account.balance}]);
+                }
+            },
+          
+          　showTransactionHistory: function(){
+                if (typeof localStorage.addressList !== 'undefined') {
+                      var addressList = JSON.parse(localStorage.getItem("addressList"));
+                      var transactionListRaw = [];
+                      addressList.forEach((key)=>{
+                           Array.prototype.push.apply(transactionListRaw, model.ether.getTransactionHistory(key.chain,key.address));
+                      });
+                      var transactionList = util.distinctArrayByKey(transactionListRaw,'hash')
+                      transactionList.sort(function(a, b) {
+                          return (a.timeStamp < b.timeStamp) ? 1 : -1; //desc
+                      });
+                      view.showTransactionHistory(transactionList);
+                }
+                else {
+                      return false;
+                }
+            },
+          
+            setAddressList: function(){
+                if (typeof localStorage.recipientList !== 'undefined') {
+                      var addressList = JSON.parse(localStorage.getItem("recipientList"));
+                      addressList.sort(function(a, b) {
+                          return (a.name < b.name) ? -1 : 1; //asc
+                      });
+                      view.setAddressList(addressList);
+                }
+                else {
+                      return false;
+                }
+            },
+          
+            deleteAddress: function(address){
+                if (typeof localStorage.recipientList !== 'undefined') {
+                      var addressList = JSON.parse(localStorage.getItem("recipientList"));
+                      var addressArray =[];
+                      addressList.forEach((key)=>{
+                            addressArray.push(key.address);
+                      });
+                      var idx = addressArray.indexOf(address);
+                      addressList.splice(idx,1);
+                      localStorage.setItem("recipientList", JSON.stringify(addressList));
+                      model.setAddressList();
+                }
+                else {
+                      return false;
+                }
+            },
+          
+            updateName: function(name,address){
+                if (typeof localStorage.recipientList !== 'undefined') {
+                      var addressList = JSON.parse(localStorage.getItem("recipientList"));
+                      var addressArray =[];
+                      addressList.forEach((key)=>{
+                            addressArray.push(key.address);
+                      });
+                      var idx = addressArray.indexOf(address);
+                      addressList[idx] = {"name":name,"chain":addressList[idx].chain,"address":address};
+                      localStorage.setItem("recipientList", JSON.stringify(addressList));
+                      model.setAddressList();
+                }
+                else {
+                      return false;
+                }
+            },
+          
+            addAddress: function(name,chain,address){
+                var newAddress = {"name":name,"chain":chain,"address":address};
+              
+                if (typeof localStorage.recipientList !== 'undefined') {
+                      var addressList = JSON.parse(localStorage.getItem("recipientList"));
+                      var addressArray =[];
+                      addressList.forEach((key)=>{
+                            addressArray.push(key.address);
+                      });
+                      var idx = addressArray.indexOf(newAddress.address);
+                      if (idx == -1) {
+                            addressList.push(newAddress);
+                            localStorage.setItem("recipientList", JSON.stringify(addressList));
+                            model.setAddressList();
+                            view.showList();
+                      }
+                      else{
+                            return false;
+                      }
+                }
+                else {
+                    var addressList = [];
+                    addressList.push(newAddress);
+                    localStorage.setItem("recipientList", JSON.stringify(addressList));
+                    model.setAddressList();
+                }
+            },
+          
+            transfer: function(chain,secret,sendTo,amount,gas){
+                model.ether.transfer(chain,secret,sendTo,amount,gas).then(function(txHash){
+                      alert('Payment completes successfully.');
+                      model.addAddress(util.dateString(),chain,sendTo);
+                      view.showList();
+                
+                }).catch(function(err){
+                      alert(err);
+                });
+            }
+            
+        };
+
+        var Ether = (function() {
+
+            var Ether = function(require) {
+                if(!(this instanceof Ether)) {
+                    return new Ether(require);
+                }
+                this.Util = require('ethereumjs-util');
+                this.Tx = require('ethereumjs-tx');
+            }
+
+            Ether.prototype.setChain = function(chain){
+                    switch(chain){
+                    case 'mainnet':
+                        return {'node':'https://mainnet.infura.io/OvAgyN0aDXnqSSRIVzY4','api':'https://api.etherscan.io/api','id':1};
+                        break;
+                    case 'ropsten':              
+                        return {'node':'https://ropsten.infura.io/OvAgyN0aDXnqSSRIVzY4','api':'https://api-ropsten.etherscan.io/api','id':3};
+                        break;
+                    case 'rinkeby':              
+                        return {'node':'https://rinkeby.infura.io/OvAgyN0aDXnqSSRIVzY4','api':'https://api-rinkeby.etherscan.io/api','id':4};
+                        break;
+                    case 'kovan':              
+                        return {'node':'https://kovan.infura.io/OvAgyN0aDXnqSSRIVzY4','api':'https://api-kovan.etherscan.io/api','id':42};
+                        break;
+                    default:
+                        return {'node':'https://mainnet.infura.io/OvAgyN0aDXnqSSRIVzY4','api':'https://api.etherscan.io/api','id':1};
+                        break;
+                }
+            }
+            
+            Ether.prototype.validateAddress = function(address){
+                var valid = true;
+                if(String(address) == ''){
+                    valid = false;
+                }
+                else if(
+                        String(address).length != 42
+                    || !String(address).match(/^[0-9a-zA-Z]/)
+                    || !(String(address).slice(0,2)=='0x')
+                ){
+                    valid = false;
+                }
+                return valid;
+            }
+            
+            Ether.prototype.validateSecret = function(secret){
+                var valid = true;
+                if(String(secret) == ''){
+                    valid = false;
+                }
+                else if(
+                        String(secret).length != 64
+                    || !String(secret).match(/^[0-9a-z]/)
+                ){
+                    valid = false;
+                }
+                return valid;
+            }
+             
+            Ether.prototype.getBalance = function(chain,address){
+                const web3 = new Web3(new Web3.providers.HttpProvider(this.setChain(chain).node));
+                if(this.validateAddress(address)){
+                      return web3.fromWei(web3.eth.getBalance(address), "ether").toNumber();
+                }
+                else{
+                      return false;
+                }
+            }
+            
+            Ether.prototype.getAccountFromSecret = function(chain,secret){
+                if(this.validateSecret(secret)){
+                      const web3 = new Web3(new Web3.providers.HttpProvider(this.setChain(chain).node));
+                      var privkey = this.Util.toBuffer('0x'+ secret);
+                      var address = '0x' + this.Util.privateToAddress(privkey).toString('hex');
+                      if(this.validateAddress(address)){
+                            return {'address':address,'balance':web3.fromWei(web3.eth.getBalance(address), "ether").toNumber()};
+                      }
+                      else{
+                            return false;
+                      }
+                }
+                else{
+                      return false;
+                }
+            }
+
+            Ether.prototype.getTransactionHistory = function(chain,address){
+                  const web3 = new Web3(new Web3.providers.HttpProvider(this.setChain(chain).node));
+                  const currentBlock = web3.eth.blockNumber;
+                  const reqBody = {
+                    'module':'account',
+                    'action':'txlist',
+                    'address':address,
+                    'startblock':0,
+                    'endblock':currentBlock,
+                    'page':1,
+                    'offset':10, //Max count of history
+                    'sort':'asc',
+                    'apikey':'NQ8WV2Z7I8CB5MVUCW3F9CPFDZIKSASI5C'
+                  }
+                  $.ajax({
+                      url: this.setChain(chain).api,
+                      type: "GET",
+                      dataType: "json",
+                      data: reqBody,
+                      async:false,
+                  })
+                  .done((data, textStatus, jqXHR) => {
+                      sessionStorage.setItem("transactionList",JSON.stringify(data.result));
+                  })
+                  .fail((jqXHR, textStatus, errorThrown) => {
+                      console.log(jqXHR.responseText);
+                  });
+                  return JSON.parse(sessionStorage.getItem("transactionList"));
+            }          
+            
+            Ether.prototype.transfer = function(chain,secret,sendTo,amount,gas){
+                const web3 = new Web3(new Web3.providers.HttpProvider(this.setChain(chain).node));
+
+                return new Promise((resolve, reject) => {
+                    if(!this.validateSecret(secret)){
+                            reject('Invalid secret.')
+                    }
+                    if(!this.validateAddress(sendTo)){
+                            reject('Destination address is invalid.')
+                    }
+                    if(typeof(amount)!=='number' || amount<0){
+                            reject('Invalid amount.')
+                    }
+                    var account = this.getAccountFromSecret(chain,secret);
+
+                    web3.eth.getTransactionCount(account.address, (err,txCount) => {
+                        var privKey = this.Util.toBuffer('0x'+ secret);
+                        var rawTx = {
+                            nonce: web3.toHex(txCount),
+                            gasPrice: web3.toHex(web3.toWei(gas, 'gwei')),
+                            gasLimit: web3.toHex(21000),
+                            to: sendTo,
+                            value: web3.toHex(web3.toWei(amount, 'ether')),  
+                            data:null,
+                            chainId: this.setChain(chain).id
+                        }
+
+                        var tx = new this.Tx(rawTx);
+                        tx.sign(privKey);
+                      
+                        var signedTx = tx.serialize();
+
+                        web3.eth.sendRawTransaction('0x' + signedTx.toString('hex'),(err, txHash)=>{
+                            if(err) {
+                                reject(err);
+                            } else {
+                                resolve(txHash);
+                            }
+                        });
+                    });
+                });
+             }
+          
+//             Ether.prototype.getTransactionHistory = function(chain,address){
+//                   const web3 = new Web3(new Web3.providers.HttpProvider(this.setChain(chain).node));
+//                   const currentBlock = web3.eth.blockNumber;
+//                   var transaction = [];
+//                   var transactionCount = web3.eth.getTransactionCount(address, currentBlock);
+//                   var balance = web3.eth.getBalance(address, currentBlock);           
+//                   for (var i=currentBlock; i >= 3610154 && (transactionCount > 0 || balance > 0); --i) {
+//                       var block = web3.eth.getBlock(i, true);
+
+//                       if (block && block.transactions) {
+//                           block.transactions.forEach(function(e) {
+//                               if (address == e.from && e.from != e.to) {
+//                                   balance += e.value;
+//                                   transaction.push({'blockNumber':i,'from':e.from,'to':e.to,'amount':e.value.toString(10)})
+//                                   --transactionCount;
+//                               }
+//                               if (address == e.to) {
+//                                   if (e.from != e.to)
+//                                   balance -= e.value;
+//                                   transaction.push({'blockNumber':i,'from':e.from,'to':e.to,'amount':e.value.toString(10)})
+//                               }
+//                           });
+//                       }
+//                   }
+//                   return transaction;
+//             }
+
+            return Ether;
+        })();
+       
+      
+        var util = {
+            dateString:function(){
+                var d = new Date();
+                var year = d.getFullYear();
+                var month = d.getMonth();
+                var date = d.getDate();
+                var date = ('00'+year).slice(-2) + ('00'+month).slice(-2) + ('00'+date).slice(-2);
+                return date;
+            },
+          
+            unixTimetoDate:function(UNIX_timestamp){
+                var d = new Date(UNIX_timestamp * 1000);
+                var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                var year = d.getFullYear();
+                // var month = months[d.getMonth()];
+                var month = d.getMonth();
+                var date = d.getDate();
+                var hour = d.getHours();
+                var min = d.getMinutes();
+                var datetime =
+                    ('0000'+year).slice(-4) +
+                    '/' +
+                    ('00'+month).slice(-2) + 
+                    '/' +
+                    ('00'+date).slice(-2) +
+                    '  ' + 
+                    ('00'+hour).slice(-2)  + ':' + ('00'+min).slice(-2) ;
+                return datetime;
+            },
+          
+            distinctArrayByKey:function(array,key){
+                var obj = {};
+                for (var i = 0; i < array.length; i++) {
+                  obj[array[i][key]] = array[i];
+                }
+                var newArray = [];
+                for (var i in obj) {
+                  newArray.push(obj[i]);
+                }
+                return newArray;
+            },
+          
+            queryParse: function(text, sep, eq, isDecode) {
+                text = text || location.search.substr(1);
+                sep = sep || '&';
+                eq = eq || '=';
+                var decode = (isDecode) ? decodeURIComponent : function(a) { return a; };
+                return text.split(sep).reduce(function(obj, v) {
+                  var pair = v.split(eq);
+                  obj[pair[0]] = decode(pair[1]);
+                  return obj;
+              }, {});
+            }
+        }
+     
+        
+        var validate = {
+            transferForm: function(){
+                $(".main .message_alert").empty();
+
+                $('.main .sender input').each(function(){
+                    if($(this).val() == ''){
+                        $(".main .sender  .message_alert").text("Sender's private key is required.");
+                    }
+                    else if(
+                            String($(this).val()).length != 64 
+                        || !String($(this).val()).match(/^[0-9a-z]/)
+                    ){
+                        $(".main .sender .message_alert").text('Please enter a valid private key.');
+                    }
+                    else{
+                        $(".main .sender .message_alert").empty();
+                    }
+                });
+
+
+                $('.main .recipient input').each(function(){
+                    if($(this).val() == ''){
+                        $(".main .recipient .message_alert").text('Recipient address is required.');
+                    }
+                    else if(
+                            String($(this).val()).length != 42 
+                        || !String($(this).val()).match(/^[0-9a-zA-Z]/)
+                        || !(String($(this).val()).slice(0,2)=='0x')
+                    ){
+                        $(".main .recipient .message_alert").text('Please enter a valid Ethereum address.');
+                    }
+                    else{
+                        $(".main .recipient .message_alert").empty();
+                    }
+                });
+
+                $('.main .amount input').each(function(){
+                    if($(this).val() == ''){
+                        $(".main .amount .message_alert").text('Transfer amount is required.');
+                    }
+                    else if(!isFinite($(this).val())){
+                        $(".main .amount .message_alert").text('Only number format is allowed.');
+                    }
+                    else if($(this).val() <= 0){
+                        $(".main .amount .message_alert").text('Non-positive values are not allowed.');
+                    }
+                    else{
+                        $(".main .amount .message_alert").empty();
+                    }
+                });
+              
+                $('.main .gas input').each(function(){
+                    if($(this).val() == ''){
+                        $(".main .gas .message_alert").text('Transfer amount is required.');
+                    }
+                    else if(!isFinite($(this).val())){
+                        $(".main .gas .message_alert").text('Only number format is allowed.');
+                    }
+                    else if($(this).val() <= 0){
+                        $(".main .gas .message_alert").text('Non-positive values are not allowed.');
+                    }
+                    else{
+                        $(".main .gas .message_alert").empty();
+                    }
+                });
+              
+                var valid=true;
+                $(".main .message_alert").each( function() {
+                    if($(this).text()!=''){
+                        valid = false;
+                    }
+                });
+                if(valid){
+                    $(".main .btn").fadeIn('swing');
+                }
+                else{
+                    $(".main .btn").fadeOut('swing');
+                }
+            }
+        };
+      
+        var script = {
+            onload : function(require){
+                model.init(new Ether(require));
+                view.init();
+                controller.init();
+                return false;
+            }
+        }
+      </script>
+      <script type="text/javascript" src="lib/ethereumjs.js"></script>
+</body>
+</html>

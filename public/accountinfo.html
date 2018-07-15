@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ethereum Account Information</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, height=device-height">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Raleway" />
+    <link rel="stylesheet" href="css/accountinfo.css">
+</head>
+<body id="accountinfo">
+    <div id="loading" class="mdl-spinner mdl-js-spinner is-active" style="position:absolute;top:0;bottom:0;left:0;right:0;margin:auto;z-index:10;"></div>
+    <div class="header">
+        <div class="title">Ethereum Account Information</div>
+        <div class="menu">
+            <div class="content main">
+                Show Balance
+            </div>
+            <div class="content list">
+                Address List
+            </div>
+            <div class="content add">
+                Add Address
+            </div>
+            <div class="selector"></div>
+        </div>
+    </div>
+    <div class="body">
+        <div class="main">
+            <canvas id="balanceChart" style="width:100%;margin-bottom:3rem;"></canvas>
+            <div class="info-container"></div>
+        </div>
+        <div class="list">
+            <div class="index">
+                <div class="name">Name</div>
+                <div class="address">Address</div>
+            </div>
+            <div class="info-container"></div>
+        </div>
+        <div class="add">
+            <div class="input name" style="margin-top:2rem;">
+                <label>Name</label>
+                <input type="text" placeholder="MAIN WALLET">
+                <div class="message_alert"></div>
+            </div>
+            <div class="input chain">
+                <label>Chain</label>
+                <div class="select-wrap">
+                    <select name="chain">
+                        <option value="mainnet">Mainnet</option>
+                        <option value="ropsten">Ropsten</option>
+                        <option value="rinkeby">Rinkeby</option>
+                        <option value="kovan">Kovan</option>
+                    </select>
+                </div>
+                <div class="message_alert"></div>
+            </div>
+            <div class="input address">
+                <label>Ethererum Address</label>
+                <input type="text" placeholder="0xFa2A634c13d73f9d9A745be8D8Cf7dfe3993f873" style="text-indent: 1.5em;">
+                <img id="qrscan" src="https://pragma-curry.com/wp/wp-content/uploads/2018/07/qr.png" style="position:absolute;width:2rem;height:2rem;margin-top:-5.5rem;margin-left:2rem;"/>
+                <div class="message_alert"></div>
+            </div>
+            <div class="btn_container">
+                <div class="btn add-address" style="display:none;">Add Address</div>
+            </div>
+            <video id="preview" autoplay="autoplay" class="active" style="transform: scaleX(-1);"></video>
+        </div>
+        <button class="show-add mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored">
+            <i class="material-icons">add</i>
+        </button>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.4/Chart.min.js" defer></script>
+    <script type="text/javascript" src="https://code.getmdl.io/1.3.0/material.min.js" defer></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <script type="text/javascript" src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
+    <script type="text/javascript">
+      
+        var controller = {
+            init: function(){
+                $(".header .menu .main").on("click",()=>{
+                    view.showMain();
+                });    
+                $(".header .menu .list").on("click",()=>{
+                    view.showList();
+                });
+                $(".header .menu .add").on("click",()=>{
+                    view.showAdd();
+                });
+                $(".body .show-add").on("click",()=>{
+                    view.showAdd();
+                });
+                $("#qrscan").on("click",()=>{
+                    this.qrScan();
+                });
+                $('.body .add .add-address').on('click',()=>{
+                    model.addAddress($('.add .name input').val(),$('.add .chain select').val(),$('.add .address input').val());
+                });
+                $('.add input').on('change blur',()=>{
+                    validate.addForm();
+                });
+                this.swipe(('.body .main'),function(){view.showList();},function(){return false;});
+                this.swipe(('.body .list'),function(){view.showAdd();},function(){view.showMain();});
+                this.swipe(('.body .add'),function(){return false;},function(){view.showList();});
+            },
+
+            swipe:function(page,swipeLeft,swipeRight){
+                $(page).on('touchstart', function (event) {
+                    var position = event.originalEvent.changedTouches[0].pageX;
+                    $(page).off('touchend');
+                    $(page).on('touchend',  function (event) {
+                        if (event.originalEvent.changedTouches[0].pageX < position - $(page).width() * 0.25){
+                            swipeLeft();
+                        }
+                        else if(event.originalEvent.changedTouches[0].pageX > position + $(page).width() * 0.25){
+                            swipeRight();
+                        }
+                    });
+                });
+            },
+  
+            setAddressList: function(){
+                $(document).off('click', "i.edit");
+                $(document).on('click', "i.edit", function(event){
+                      event.preventDefault();
+                      $(document).off('click', ".body .list .address");
+                      view.editName($(this).data("address"));
+                });
+                $(document).off('click', "i.delete");
+                $(document).on('click', "i.delete", function(event){
+                      event.preventDefault();
+                      if(confirm('Do you really delete this address?')){
+                          var address = $(this).data("address");
+                          view.deleteAddress(address);
+                          setTimeout(()=>{
+                              model.deleteAddress($('[data-address="'+address+'"].address').text());
+                          }, 2000);                  
+                      }
+                });
+                $(document).off('click', "i.cancel");
+                $(document).on('click', "i.cancel", function(event){
+                      event.preventDefault();
+                      model.setAddressList();
+                });
+                $(document).off('click', "i.update");
+                $(document).on('click', "i.update", function(event){
+                      event.preventDefault();
+                      const address= $(this).data("address");
+                      model.updateName( $('[data-address="'+address+'"].name').text(), $('[data-address="'+address+'"].address').text());
+                });
+            },
+
+            qrScan: function(){
+                var videoTag = document.getElementById('preview');
+                var scanner = new Instascan.Scanner({ video: videoTag ,mirror: false});
+
+                scanner.addListener('scan', function (value) {
+                    scanner.stop();
+                    $('.add .address input').val(value);
+                    $('.add .name,.add .chain,.add,.add .address,.btn_container').show('slow');
+                    validate.addForm();
+                });
+                $("body").off("click");
+                $("body").on("click",()=>{
+                    scanner.stop();
+                    $('.add .name,.add .chain,.add,.add .address,.btn_container').show('slow');
+                });
+                Instascan.Camera.getCameras()
+                .then(function (cameras) {
+                    if (cameras.length > 0) {
+                        if(typeof cameras[1] !== 'undefined'){
+                            scanner.start(cameras[1]); //BackCamera:cameras[1] 
+                        }else{
+                            scanner.start(cameras[0]); //FrontCamera:cameras[0]
+                        }
+                        $('.add .name,.add .chain,.add .address,.add .btn_container').hide('slow');
+                    }
+                    else {
+                        alert('No camera found.');
+                    }
+                })
+                .catch(function(err) {
+                    alert(err);
+                });
+            },
+        };
+
+      
+        var view = {
+            init: function(){
+                $('#loading').hide();
+            },
+
+            showMain:function(){
+                $('body').scrollTop(0);
+                $('.header .selector').animate({'margin-left':'0'},'.1s');
+                $('.body .main').animate({'margin-left':'0'},'.1s');
+                $('.body .list').animate({'margin-left':'100%'},'.1s');
+                $('.body .add').animate({'margin-left':'200%'},'.1s');
+                $('.body .show-add').show("swing");
+            },
+          
+            showList:function(){
+                $('body').scrollTop(0);
+                $('.header .selector').animate({'margin-left':'33.3333%'},'.1s');
+                $('.body .main').animate({'margin-left':'-100%'},'.1s');
+                $('.body .list').animate({'margin-left':'0'},'.1s');
+                $('.body .add').animate({'margin-left':'100%'},'.1s');
+                $('.body .show-add').show("swing");
+                $('[data-list-edit]').show();
+                $('[data-list-delete]').show();
+                $('[data-list-cancel]').hide();
+                $('[data-list-confirm]').hide();
+            },
+  
+            showAdd:function(){
+                $('body').scrollTop(0);
+                $('.header .selector').animate({'margin-left':'66.6666%'},'.1s');
+                $('.body .main').animate({'margin-left':'-200%'},'.1s');
+                $('.body .list').animate({'margin-left':'-100%'},'.1s');
+                $('.body .add').animate({'margin-left':'0'},'.1s');
+                $('.body .show-add').hide("swing");
+                validate.addForm();
+            },
+          
+            randomColor:function(data){
+              　const rand = (min, max) => Math.floor(Math.random() * (max - min + 1) + min);
+                var backgroundColor = [];
+                for (var i = 0; i < data.length; i++) {
+                      if(i%2==0){
+                          var r=rand(0,255);
+                          var g=rand(0,255);
+                          var b=rand(0,255);
+                      }else{
+                          var r=255-rand(0,255);
+                          var g=255-rand(0,255);
+                          var b=255-rand(0,255);
+                      }
+                      backgroundColor[i] = 'rgba('+ r +','+ g +','+ b +', 1)';
+                }
+                return backgroundColor;
+            },
+          
+            drawChart: function(label,data){
+                var ctx = document.getElementById("balanceChart").getContext('2d');
+                var data = {
+                    datasets: [{
+                      label: '# Ether',
+                      data: data,
+                      backgroundColor: this.randomColor(data),
+                    }],
+                    labels: label
+                };
+                var options = {
+                    animation:[{
+                        animateScale: true
+                    }]
+                };
+                var chart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: data,
+                    options: options
+                });
+            },
+          
+            setInfo: function(info){
+                $(".body .main .info-container").empty();
+                info.forEach((key)=>{
+                     $(".body .main .info-container").append(
+                         $("<div>").attr({ "class": "info"})
+                             .append($("<div>").attr({ "class": "name" }).text(key.chain+' : '+key.name))
+                             .append($("<div>").attr({ "class": "balance" }).text('Balance : ' + key.balance + ' Ether'))
+                             .append($("<div>").attr({ "class": "address" }).text('Address :  ' + key.address))
+                     );
+                });
+            },
+          
+            setAddressList: function(addressList){
+                $(".body .list .info-container").empty();
+                addressList.forEach((key)=>{
+                     $(".body .list .info-container").append(
+                         $("<div>").attr({ "class": "info" , "data-address": key.address })
+                             .append($("<div>").attr({ "class": "name", "data-address": key.address }).text(key.name))
+                             .append($("<div>").attr({ "class": "address", "data-address": key.address }).text(key.address))
+                             .append($("<i class='edit mdl-icon-toggle__label material-icons'>edit</i>").attr({"data-address": key.address}))
+                             .append($("<i class='delete mdl-icon-toggle__label material-icons'>delete</i>").attr({"data-address": key.address}))
+                             .append($("<i class='cancel mdl-icon-toggle__label material-icons'>cancel</i>").attr({"data-address": key.address}).css({"display":"none"}))
+                             .append($("<i class='update mdl-icon-toggle__label material-icons'>check_circle</i>").attr({"data-address": key.address}).css({"display":"none"}))
+                     );
+                });
+                $(".list .info .name").attr({"contenteditable": "false"});
+                $(".list .info .address").attr({"contenteditable": "false"});
+                controller.setAddressList();
+            },
+          
+            editName: function(address){
+                $('i.edit[data-address="'+address+'"]').hide('slow');
+                $('i.delete[data-address="'+address+'"]').hide('slow');
+                $('i.cancel[data-address="'+address+'"]').show('slow');
+                $('i.update[data-address="'+address+'"]').show('slow');
+                $('i.edit[data-address!="'+address+'"]').show('slow');
+                $('i.delete[data-address!="'+address+'"]').show('slow');
+                $('i.cancel[data-address!="'+address+'"]').hide('slow');
+                $('i.update[data-address!="'+address+'"]').hide('slow');
+                $('[data-address="'+address+'"].name').attr({"contenteditable": "true"});
+                $('[data-address!="'+address+'"].name').attr({"contenteditable": "false"});
+            },
+          
+            deleteAddress: function(address){
+                $('.info[data-address="'+address+'"]').children().hide('slow');
+                $('.info[data-address="'+address+'"]').animate({'height':0},100);
+            }
+        };
+
+
+        var model = {
+          
+            init: function(){
+                if(typeof localStorage.addressList !== 'undefined' && typeof JSON.parse(localStorage.addressList)[0].address !== 'undefined'){
+                       this.showMain();
+                }
+                else{
+                      view.showAdd();
+                }
+                this.setAddressList();
+            },
+          
+            showMain: function(){
+               if (typeof localStorage.addressList !== 'undefined') {
+                      var addressList = JSON.parse(localStorage.getItem("addressList"));
+                      const ether = new Ether();
+                      var data = [];
+                      var label = [];
+                      var info = [];
+                      $('#loading').show();
+                      addressList.forEach((key)=>{
+                           var balance = ether.getBalance(key.chain,key.address);
+                           data.push(balance);
+                           label.push(key.chain + ':' + key.name);
+                           info.push({"name":key.name,"chain":key.chain,"address":key.address,"balance":balance});
+                      });
+                      view.drawChart(label,data);
+                      view.setInfo(info);
+                      $('#loading').fadeOut(2000);
+                }
+                else {
+                      alert('No showable data exist.')
+                      return false;
+                }
+            },
+          
+            setAddressList: function(){
+                if (typeof localStorage.addressList !== 'undefined') {
+                      var addressList = JSON.parse(localStorage.getItem("addressList"));
+                      addressList.sort(function(a, b) {
+                          return (a.name < b.name) ? -1 : 1;
+                      });
+                      view.setAddressList(addressList);
+                      model.showMain();
+                }
+                else {
+                      return false;
+                }
+            },
+          
+            deleteAddress: function(address){
+                if (typeof localStorage.addressList !== 'undefined') {
+                      var addressList = JSON.parse(localStorage.getItem("addressList"));
+                      var addressArray =[];
+                      addressList.forEach((key)=>{
+                            addressArray.push(key.address);
+                      });
+                      var idx = addressArray.indexOf(address);
+                      addressList.splice(idx,1);
+                      localStorage.setItem("addressList", JSON.stringify(addressList));
+                      this.setAddressList();
+                }
+                else {
+                      return false;
+                }
+            },
+          
+            updateName: function(name,address){
+                if (typeof localStorage.addressList !== 'undefined') {
+                      var addressList = JSON.parse(localStorage.getItem("addressList"));
+                      var addressArray =[];
+                      addressList.forEach((key)=>{
+                            addressArray.push(key.address);
+                      });
+                      var idx = addressArray.indexOf(address);
+                      addressList[idx] = {"name":name,"chain":addressList[idx].chain,"address":address};
+                      localStorage.setItem("addressList", JSON.stringify(addressList));
+                      this.setAddressList();
+                }
+                else {
+                      return false;
+                }
+            },
+          
+            addAddress: function(name,chain,address){
+              
+                var newAddress = {"name":name,"chain":chain,"address":address};
+              
+                if (typeof localStorage.addressList !== 'undefined') {
+                      var addressList = JSON.parse(localStorage.getItem("addressList"));
+                      var addressArray =[];
+                      addressList.forEach((key)=>{
+                            addressArray.push(key.address);
+                      });
+                      var idx = addressArray.indexOf(newAddress.address);
+                      if (idx == -1) {
+                            addressList.push(newAddress);
+                            localStorage.setItem("addressList", JSON.stringify(addressList));
+                            this.setAddressList();
+                            view.showList();
+                      }
+                      else{
+                            alert('This address had already registered.');
+                      }
+                }
+                else {
+                    var addressList = [];
+                    addressList.push(newAddress);
+                    localStorage.setItem("addressList", JSON.stringify(addressList));
+                    this.setAddressList();
+                    view.showList();
+                }
+            }
+        };
+
+      
+        var validate = {
+            addForm: function(){
+                $(".add .message_alert").empty();
+
+                $('.add .name input').each(function(){
+                    if($(this).val() == ''){
+                        $(".add .name .message_alert").text('You need to attach a name to address.');
+                    }
+                    else{
+                        $(".add .name .message_alert").empty();
+                    }
+                });
+
+
+                $('.add .address input').each(function(){
+                    if($(this).val() == ''){
+                        $(".add .address .message_alert").text('Ethereum address is required.');
+                    }
+                    else if(
+                            String($(this).val()).length != 42 
+                        || !String($(this).val()).match(/^[0-9a-zA-Z]/)
+                        || !(String($(this).val()).slice(0,2)=='0x')
+                    ){
+                        $(".add .address .message_alert").text('Please enter a valid Ethereum address.');
+                    }
+                    else{
+                        $(".add .address .message_alert").empty();
+                    }
+                });
+
+                var valid=true;
+                $(".add .message_alert").each( function() {
+                    if($(this).text()!=''){
+                        valid = false;
+                    }
+                });
+                if(valid){
+                    $(".add .btn").fadeIn('swing');
+                }
+                else{
+                    $(".add .btn").fadeOut('swing');
+                }
+            }
+        };
+  
+
+        var Ether = function(){
+          
+            this.setChain = function(chain){
+                    switch(chain){
+                    case 'mainnet':
+                        return {'node':'https://mainnet.infura.io/OvAgyN0aDXnqSSRIVzY4','id':1};
+                        break;
+                    case 'ropsten':              
+                        return {'node':'https://ropsten.infura.io/OvAgyN0aDXnqSSRIVzY4','id':3};
+                        break;
+                    case 'rinkeby':              
+                        return {'node':'https://rinkeby.infura.io/OvAgyN0aDXnqSSRIVzY4','id':4};
+                        break;
+                    case 'kovan':              
+                        return {'node':'https://kovan.infura.io/OvAgyN0aDXnqSSRIVzY4','id':42};
+                        break;
+                    default:
+                        return {'node':'https://mainnet.infura.io/OvAgyN0aDXnqSSRIVzY4','id':1};
+                        break;
+                }
+            }
+            
+            this.validateAddress = function(address){
+                var valid = true;
+                if(String(address) == ''){
+                    valid = false;
+                }
+                else if(
+                        String(address).length != 42
+                    || !String(address).match(/^[0-9a-zA-Z]/)
+                    || !(String(address).slice(0,2)=='0x')
+                ){
+                    valid = false;
+                }
+                return valid;
+            }
+            
+            this.validateSecret = function(secret){
+                var valid = true;
+                if(String(secret) == ''){
+                    valid = false;
+                }
+                else if(
+                        String(secret).length != 64
+                    || !String(secret).match(/^[0-9a-z]/)
+                ){
+                    valid = false;
+                }
+                return valid;
+            }
+            
+            this.getBalance = function(chain,address){
+                const web3 = new Web3(new Web3.providers.HttpProvider(this.setChain(chain).node));
+                if(this.validateAddress(address)){
+                      return web3.fromWei(web3.eth.getBalance(address), "ether").toNumber();
+                }
+                else{
+                      return false;
+                }
+            }
+            
+            this.transfer = function(sendFrom,sendTo,amount,secret){
+                return new Promise((resolve, reject) => {
+                    if(!this.validateAddress(sendFrom)){
+                            reject('Sender address is invalid.')
+                    }
+                    if(!this.validateAddress(sendFrom)){
+                            reject('Destination address is invalid.')
+                    }
+                    if(typeof(amount)!=='number' || amount<0){
+                            reject('Invalid amount.')
+                    }
+                    if(!this.validateSecret(secret)){
+                            reject('Invalid secret.')
+                    }
+                    
+                    web3.eth.getTransactionCount(sendFrom, (err,txCount) => {
+                        var privateKey = new EthJS.Buffer.Buffer(secret, 'hex')
+                        var rawTx = {
+                            nonce: web3.toHex(txCount),
+                            gasPrice: web3.toHex(web3.toWei('4', 'gwei')),
+                            gasLimit: web3.toHex(21000),
+                            to: sendTo,
+                            value: web3.toHex(web3.toWei(amount, 'ether')),  
+                            data:null,
+                            chainId: this.setChain('ropsten').id
+                        }
+
+                        var tx = new EthJS.Tx(rawTx);
+                        tx.sign(privateKey);
+
+                        var signedTx = tx.serialize();
+                        web3.eth.sendRawTransaction('0x' + signedTx.toString('hex'),(err, txHash)=>{
+                            if(err) {
+                                reject(err);
+                            } else {
+                                resolve(txHash);
+                            }
+                        });
+                    });
+                });
+            }
+        }
+       
+        window.onload = function(){
+             model.init();
+             view.init();
+             controller.init();
+
+             return false;
+        }
+      </script>
+</body>
+</html>

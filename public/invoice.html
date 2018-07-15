@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Issue Invoice</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, height=device-height">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Raleway" />
+    <link rel="stylesheet" href="css/invoice.css">
+</head>
+<body id="invoice">
+    <div id="loading" class="mdl-spinner mdl-js-spinner is-active" style="position:absolute;top:0;bottom:0;left:0;right:0;margin:auto;z-index:10;"></div>
+    <div class="header">
+        <div class="title">Manage Invoice</div>
+        <div class="menu">
+            <div class="content main">
+                QR Code
+            </div>
+            <div class="content list">
+                Invoice List
+            </div>
+            <div class="content add">
+                Add Invoice
+            </div>
+            <div class="selector"></div>
+        </div>
+    </div>
+    <div class="body">
+        <div class="main">
+            <div id="qrcode"></div>
+            <div class="info-container"></div>
+        </div>
+        <div class="list">
+            <div class="index">
+                <div class="name">Name</div>
+                <div class="price">Price</div>
+            </div>
+            <div class="info-container"></div>
+        </div>
+        <div class="add">
+            <div class="form">
+                <div class="input name" style="margin-top:2rem;">
+                    <label>Name</label>
+                    <input type="text" placeholder="Water, Bread, etc.">
+                    <div class="message_alert"></div>
+                </div>
+                <div class="input chain">
+                    <label>Chain</label>
+                    <div class="select-wrap">
+                        <select name="chain">
+                            <option value="mainnet">Mainnet</option>
+                            <option value="ropsten">Ropsten</option>
+                            <option value="rinkeby">Rinkeby</option>
+                            <option value="kovan">Kovan</option>
+                        </select>
+                    </div>
+                    <div class="message_alert"></div>
+                </div>
+                <div class="input address">
+                    <label>Recipient Address</label>
+                    <input type="text" placeholder="0xFa2A634c13d73f9d9A745be8D8Cf7dfe3993f873" style="text-indent: 1.5em;" autocomplete="on" list="addressList">
+                    <datalist id="addressList"></datalist>
+                    <img id="qrscan" src="https://pragma-curry.com/wp/wp-content/uploads/2018/07/qr.png" style="position:absolute;width:2rem;height:2rem;margin-top:-5.5rem;margin-left:2rem;"/>
+                    <div class="message_alert"></div>
+                </div>
+                <div class="input price">
+                    <label>Price</label>
+                    <input type="tel" placeholder="0.01 Ether">
+                    <div class="message_alert"></div>
+                </div>
+                <div class="btn_container">
+                    <div class="btn add-list" style="display:none;">Issue Invoice</div>
+                </div>
+            </div>
+            <video id="preview" autoplay="autoplay" class="active" style="transform: scaleX(-1);"></video>
+        </div>
+        <button class="show-add mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored">
+            <i class="material-icons">add</i>
+        </button>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://code.getmdl.io/1.3.0/material.min.js" defer></script>
+    <script type="text/javascript" src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
+    <script type="text/javascript">
+      
+        var controller = {
+            init: function(){
+                $(".header .menu .main").on("click",()=>{
+                    view.showMain();
+                });    
+                $(".header .menu .list").on("click",()=>{
+                    view.showList();
+                });
+                $(".header .menu .add").on("click",()=>{
+                    view.showAdd();
+                });
+                $(".body .show-add").on("click",()=>{
+                    view.showAdd();
+                });
+                $('.body .add .add-list').on('click',()=>{
+                    model.addList($('.add .name input').val(),$('.add .chain select').val(),$('.add .address input').val(),$('.add .price input').val());
+                });
+                $('.add input').on('change blur',()=>{
+                    validate.addForm();
+                });
+                $("#qrscan").on("click",()=>{
+                    this.qrScan();
+                });
+                this.swipe(('.body .main'),function(){view.showList();},function(){return false;});
+                this.swipe(('.body .list'),function(){view.showAdd();},function(){view.showMain();});
+                this.swipe(('.body .add'),function(){return false;},function(){view.showList();});
+            },
+
+            swipe:function(page,swipeLeft,swipeRight){
+                $(page).on('touchstart', function (event) {
+                    var position = event.originalEvent.changedTouches[0].pageX;
+                    $(page).off('touchend');
+                    $(page).on('touchend',  function (event) {
+                        if (event.originalEvent.changedTouches[0].pageX < position - $(page).width() * 0.25){
+                            swipeLeft();
+                        }
+                        else if(event.originalEvent.changedTouches[0].pageX > position + $(page).width() * 0.25){
+                            swipeRight();
+                        }
+                    });
+                });
+            },
+  
+            setList: function(){
+                $(document).off('click', ".list .info .name,.list .info .price");
+                $(document).on('click', ".list .info .name,.list .info .price", function(event){
+                      event.preventDefault();
+                      model.showMain($(this).data("id"));
+                });
+                $(document).off('click', "i.edit");
+                $(document).on('click', "i.edit", function(event){
+                      event.preventDefault();
+                      $(document).off('click', ".list .info .name,.list .info .price");
+                      view.editList($(this).data("id"));
+                });
+                $(document).off('click', "i.delete");
+                $(document).on('click', "i.delete", function(event){
+                      event.preventDefault();
+                      if(confirm('Do you really delete this invoice?')){
+                          var id = $(this).data("id");
+                          view.deleteList(id);
+                          setTimeout(()=>{
+                              model.deleteList(id);
+                          }, 2000);                  
+                      }
+                });
+                $(document).off('click', "i.cancel");
+                $(document).on('click', "i.cancel", function(event){
+                      event.preventDefault();
+                      model.setList();
+                });
+                $(document).off('click', "i.update");
+                $(document).on('click', "i.update", function(event){
+                      event.preventDefault();
+                      const id= $(this).data("id");
+                      model.updateList(id, $('[data-id="'+id+'"].name').text(), $('[data-id="'+id+'"].price').text().replace( / Ether/g , "" ));
+                });
+            },
+          
+
+          
+            qrScan: function(){
+                var videoTag = document.getElementById('preview');
+                var scanner = new Instascan.Scanner({ video: videoTag ,mirror: false});
+
+                scanner.addListener('scan', function (value) {
+                    scanner.stop();
+                    $('.add .address input').val(value);
+                    $('.add .form').show('slow');
+                    validate.addForm();
+                });
+                $("body").off("click");
+                $("body").on("click",()=>{
+                    scanner.stop();
+                    $('.add .form').show('slow');
+                });
+                Instascan.Camera.getCameras()
+                .then(function (cameras) {
+                    if (cameras.length > 0) {
+                        if(typeof cameras[1] !== 'undefined'){
+                            scanner.start(cameras[1]); //BackCamera:cameras[1] 
+                        }else{
+                            scanner.start(cameras[0]); //FrontCamera:cameras[0]
+                        }
+                        $('.add .form').hide('slow');
+                    }
+                    else {
+                        alert('No camera found.');
+                    }
+                })
+                .catch(function(err) {
+                    alert(err);
+                });
+            },
+        };
+
+      
+        var view = {
+            init: function(){
+                $('#loading').hide();
+                view.setSelectOption();
+            },
+
+            showMain:function(){
+                $('body').scrollTop(0);
+                $('.header .selector').animate({'margin-left':'0'},'.1s');
+                $('.body .main').animate({'margin-left':'0'},'.1s');
+                $('.body .list').animate({'margin-left':'100%'},'.1s');
+                $('.body .add').animate({'margin-left':'200%'},'.1s');
+                $('.body .show-add').show("swing");
+            },
+          
+            showList:function(){
+                $('body').scrollTop(0);
+                $('.header .selector').animate({'margin-left':'33.3333%'},'.1s');
+                $('.body .main').animate({'margin-left':'-100%'},'.1s');
+                $('.body .list').animate({'margin-left':'0'},'.1s');
+                $('.body .add').animate({'margin-left':'100%'},'.1s');
+                $('.body .show-add').show("swing");
+                $('[data-list-edit]').show();
+                $('[data-list-delete]').show();
+                $('[data-list-cancel]').hide();
+                $('[data-list-confirm]').hide();
+            },
+  
+            showAdd:function(){
+                $('body').scrollTop(0);
+                $('.header .selector').animate({'margin-left':'66.6666%'},'.1s');
+                $('.body .main').animate({'margin-left':'-200%'},'.1s');
+                $('.body .list').animate({'margin-left':'-100%'},'.1s');
+                $('.body .add').animate({'margin-left':'0'},'.1s');
+                $('.body .show-add').hide("swing");
+                validate.addForm();
+            },
+          
+            setInfo: function(info){
+                $(".body .main .info-container").empty();
+                info.forEach((key)=>{
+                     $(".body .main .info-container").append(
+                         $("<div>").attr({ "class": "info"})
+                             .append($("<div>").attr({ "class": "name" }).text(key.name))
+                             .append($("<div>").attr({ "class": "price" }).text(key.price + ' Ether'))
+                             .append($("<div>").attr({ "class": "chain" }).text('Chain : ' + key.chain))
+                             .append($("<div>").attr({ "class": "address" }).text('Recipient : ' + key.address))
+                     );
+                     view.generateQRCode(key.chain,key.address,key.price);
+                });
+                view.countUp('.main .info-container .info .price', 20, 0.5);
+            },
+          
+            generateQRCode:function(chain,address,price){
+                var string = "chain="+chain+"&address="+address+"&price="+price;
+                $('#qrcode').empty();
+                $('#qrcode').qrcode({width: 250, height: 250, text:string });
+            },
+          
+            setList: function(list){
+                $(".body .list .info-container").empty();
+                list.forEach((key)=>{
+                     $(".body .list .info-container").append(
+                         $("<div>").attr({ "class": "info" , "data-id": key.id })
+                             .append($("<div>").attr({ "class": "name", "data-id": key.id }).text(key.name))
+                             .append($("<div>").attr({ "class": "price", "data-id": key.id }).text(key.price + ' Ether'))
+                             .append($("<i class='edit mdl-icon-toggle__label material-icons'>edit</i>").attr({"data-id": key.id}))
+                             .append($("<i class='delete mdl-icon-toggle__label material-icons'>delete</i>").attr({"data-id": key.id}))
+                             .append($("<i class='cancel mdl-icon-toggle__label material-icons'>cancel</i>").attr({"data-id": key.id}).css({"display":"none"}))
+                             .append($("<i class='update mdl-icon-toggle__label material-icons'>check_circle</i>").attr({"data-id": key.id}).css({"display":"none"}))
+                     );
+                });
+                $(".list .info .name").attr({"contenteditable": "false"});
+                $(".list .info .price").attr({"contenteditable": "false"});
+                controller.setList();
+            },
+          
+            editList: function(id){
+                $('i.edit[data-id="'+id+'"]').hide('slow');
+                $('i.delete[data-id="'+id+'"]').hide('slow');
+                $('i.cancel[data-id="'+id+'"]').show('slow');
+                $('i.update[data-id="'+id+'"]').show('slow');
+                $('i.edit[data-id!="'+id+'"]').show('slow');
+                $('i.delete[data-id!="'+id+'"]').show('slow');
+                $('i.cancel[data-id!="'+id+'"]').hide('slow');
+                $('i.update[data-id!="'+id+'"]').hide('slow');
+                $('[data-id="'+id+'"].name').attr({"contenteditable": "true"});
+                $('[data-id="'+id+'"].price').attr({"contenteditable": "true"});
+            },
+          
+            deleteList: function(id){
+                $('.info[data-id="'+id+'"]').children().hide('slow');
+                $('.info[data-id="'+id+'"]').animate({'height':0},100);
+            },
+          
+            setSelectOption:function(){
+                if(typeof localStorage.addressList !== 'undefined' && typeof JSON.parse(localStorage.addressList)[0].address !== 'undefined'){
+                    var list = JSON.parse(localStorage.getItem("addressList"));
+                    list.forEach((key)=>{
+                        $('#addressList').append($('<option>').val(key.address));
+                    });
+                }
+            },
+
+            countUp:function(dom,tick,timeout){
+                var countMax = $(dom).text().replace(/[^0-9.]/g, "");
+                var unit = $(dom).text().replace(/[0-9.]/g, "");
+                var time = Math.floor(timeout*1000/tick);
+                var step = countMax/tick;
+                var digit = 10 / step;
+                var sleep = (time) => {return new Promise(resolve => {setTimeout(() => {resolve()}, time)})};
+
+                $(dom).each(async function(){
+                      var count = 0;
+                      while(count<countMax){
+                           $(this).text(count + unit);
+                           count += step;
+                           count = Math.floor(count*digit)/digit
+                           await sleep(time);
+                      }
+                      $(this).text(countMax + unit);
+                });
+           },
+        };
+
+                  
+
+        var model = {
+            init: function(){
+                if(typeof localStorage.invoice !== 'undefined' && typeof JSON.parse(localStorage.invoice)[0].id !== 'undefined'){
+                      model.showMain();
+                }
+                else{
+                      view.showAdd();
+                }
+                model.setList();
+            },
+          
+            showMain:function(id){
+               if (typeof localStorage.invoice!== 'undefined') {
+                      var list = JSON.parse(localStorage.getItem("invoice"));
+                      if(typeof id !=='undefined'){
+                          view.setInfo(util.getObjByKey(list,'id',id));
+                      }
+                      else{
+                          view.setInfo([list[0]]);
+                      }
+                      view.showMain();
+                }
+                else {
+                      view.showAdd();
+                      return false;
+                }
+            },
+          
+            setList: function(){
+                if (typeof localStorage.invoice !== 'undefined') {
+                      var list = JSON.parse(localStorage.getItem("invoice"));
+                      list.sort(function(a, b) {
+                          return (a.name < b.name) ? -1 : 1;
+                      });
+                      view.setList(list);
+                }
+                else {
+                      return false;
+                }
+            },
+          
+            deleteList: function(id){
+                if (typeof localStorage.invoice !== 'undefined') {
+                      var list = JSON.parse(localStorage.getItem("invoice"));
+                      var array =[];
+                      list.forEach((key)=>{
+                            array.push(key.id);
+                      });
+                      var idx = array.indexOf(id);
+                      list.splice(idx,1);
+                      localStorage.setItem("invoice", JSON.stringify(list));
+                      model.setList();
+                }
+                else {
+                      return false;
+                }
+            },
+          
+            updateList: function(id,name,price){
+                if (typeof localStorage.invoice !== 'undefined') {
+                      var list = JSON.parse(localStorage.getItem("invoice"));
+                      var array =[];
+                      list.forEach((key)=>{
+                            array.push(key.id);
+                      });
+                      var idx = array.indexOf(id);
+                      list[idx] = {"id":id,"chain":list[idx].chain,"name":name,"price":price};
+                      localStorage.setItem("invoice", JSON.stringify(list));
+                      model.setList();
+                }
+                else {
+                      return false;
+                }
+            },
+
+          
+            addList: function(name,chain,address,price){
+                var id = util.randomString(8);
+                var newInvoice = {"id":id,"name":name,"chain":chain,"address":address,"price":price};
+              
+                if (typeof localStorage.invoice !== 'undefined') {
+                      var list = JSON.parse(localStorage.getItem("invoice"));
+                      var array =[];
+                      list.forEach((key)=>{
+                            array.push(key.id);
+                      });
+                      var idx = array.indexOf(newInvoice.id);
+                      if (idx == -1) {
+                            list.push(newInvoice);
+                            localStorage.setItem("invoice", JSON.stringify(list));
+                            model.setList();
+                            view.setInfo([newInvoice]);
+                            view.showMain();
+                      }
+                      else{
+                            alert('This address had already registered.');
+                      }
+                }
+                else {
+                    var list = [];
+                    list.push(newInvoice);
+                    localStorage.setItem("invoice", JSON.stringify(list));
+                    model.setList();
+                    view.setInfo([newInvoice]);
+                    view.showMain();
+                }
+            }
+        };
+      
+      
+        var util = {
+          randomString : function(length){
+              var charset = "abcdefghijklmnopqrstuvwxyz0123456789";
+              var string = "";
+              for(var i=0; i<length; i++){
+                  string += charset[Math.floor(Math.random()*charset.length)];
+              }
+              return string;           
+           },
+          
+           getObjByKey : function(objArray, key, value){
+              return $.grep(objArray, function (e) {
+                  return e[key] == value;
+              });
+           },
+          
+           sleep : function(time) {
+              return new Promise(resolve => {
+                setTimeout(() => {
+                  resolve()
+                }, time)
+              })
+           }
+        };
+
+      
+        var validate = {
+            addForm: function(){
+                $(".add .message_alert").empty();
+
+                $('.add .name input').each(function(){
+                    if($(this).val() == ''){
+                        $(".add .name .message_alert").text('You need to attach a name to invoice.');
+                    }
+                    else{
+                        $(".add .name .message_alert").empty();
+                    }
+                });
+
+                $('.add .address input').each(function(){
+                    if($(this).val() == ''){
+                        $(".add .address .message_alert").text('Recipient address is required.');
+                    }
+                    else if(
+                            String($(this).val()).length != 42 
+                        || !String($(this).val()).match(/^[0-9a-zA-Z]/)
+                        || !(String($(this).val()).slice(0,2)=='0x')
+                    ){
+                        $(".add .address .message_alert").text('Please enter a valid Ethereum address.');
+                    }
+                    else{
+                        $(".add .address .message_alert").empty();
+                    }
+                });
+
+                $('.add .price input').each(function(){
+                    if($(this).val() == ''){
+                        $(".add .price .message_alert").text('Price is required.');
+                    }
+                    else if(!isFinite($(this).val())){
+                        $(".add .price .message_alert").text('Only number format is allowed.');
+                    }
+                    else if($(this).val() <= 0){
+                        $(".add .price .message_alert").text('Non-positive values are not allowed.');
+                    }
+                    else{
+                        $(".add .price .message_alert").empty();
+                    }
+                });
+
+                var valid=true;
+                $(".add .message_alert").each( function() {
+                    if($(this).text()!=''){
+                        valid = false;
+                    }
+                });
+                if(valid){
+                    $(".add .btn").fadeIn('swing');
+                }
+                else{
+                    $(".add .btn").fadeOut('swing');
+                }
+            }
+        };
+
+       
+        window.onload = function(){
+             model.init();
+             view.init();
+             controller.init();
+
+             return false;
+        }
+      </script>
+</body>
+</html>

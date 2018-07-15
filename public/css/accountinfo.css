@@ -1,0 +1,261 @@
+html, body {
+  width: 100%;
+  position: relative;
+  overflow-x: hidden; }
+
+#accountinfo {
+  margin: 0;
+  padding: 0;
+  font-family: "Raleway";
+  color: #323232; }
+  #accountinfo .header {
+    position: fixed;
+    top: 0;
+    z-index: 10;
+    width: 100%;
+    box-shadow: 0 0.2rem 1rem 0.2rem #b4b4b4;
+    background: #464646; }
+    #accountinfo .header .title {
+      width: 100%;
+      padding: 0 1rem;
+      height: 3.7rem;
+      display: table-cell;
+      vertical-align: middle;
+      color: #f0f0f0; }
+    #accountinfo .header .menu {
+      height: 3.3rem; }
+      #accountinfo .header .menu .content, #accountinfo .header .menu .body .main .info .name, #accountinfo .body .main .info .header .menu .name, #accountinfo .header .menu .body .main .info .balance, #accountinfo .body .main .info .header .menu .balance, #accountinfo .header .menu .body .main .info .address, #accountinfo .body .main .info .header .menu .address {
+        width: 33.33333%;
+        height: 3rem;
+        float: left;
+        box-sizing: border-box;
+        padding: 1rem 0.5rem;
+        text-align: center;
+        color: #f0f0f0;
+        -webkit-transition: 0.5s;
+        -moz-transition: 0.5s;
+        -o-transition: 0.5s;
+        -ms-transition: 0.5s;
+        transition: 0.5s; }
+        #accountinfo .header .menu .content:hover, #accountinfo .header .menu .body .main .info .name:hover, #accountinfo .body .main .info .header .menu .name:hover, #accountinfo .header .menu .body .main .info .balance:hover, #accountinfo .body .main .info .header .menu .balance:hover, #accountinfo .header .menu .body .main .info .address:hover, #accountinfo .body .main .info .header .menu .address:hover {
+          background: #b4b4b4; }
+      #accountinfo .header .menu .selector {
+        left: 0;
+        width: 33.33333%;
+        height: 0.3rem;
+        clear: left;
+        background: #00ffcc; }
+  #accountinfo .body {
+    width: 300%;
+    overflow: hidden;
+    padding: 7rem 0 0 0; }
+    #accountinfo .body .main {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      margin-left: 0;
+      padding: 2rem 0 0 0; }
+      #accountinfo .body .main .info {
+        box-sizing: border-box;
+        margin: 1.5rem 0; }
+        #accountinfo .body .main .info .content, #accountinfo .body .main .info .name, #accountinfo .body .main .info .balance, #accountinfo .body .main .info .address {
+          position: relative;
+          padding: 0 0.5rem;
+          height: calc(100vw/25);
+          font-size: calc(100vw/30);
+          top: 50%;
+          -ms-transform: translateY(-50%);
+          -webkit-transform: translateY(-50%);
+          transform: translateY(-50%);
+          word-wrap: break-word; }
+        #accountinfo .body .main .info .name {
+          width: 100%;
+          clear: left; }
+        #accountinfo .body .main .info .balance {
+          width: 100%;
+          clear: left; }
+        #accountinfo .body .main .info .address {
+          width: 100%;
+          clear: left; }
+    #accountinfo .body .list {
+      width: 100%;
+      height: 100vh;
+      position: absolute;
+      margin-left: 100%; }
+      #accountinfo .body .list .index, #accountinfo .body .list .info {
+        font-weight: bold;
+        height: 4rem;
+        position: relative;
+        box-sizing: border-box;
+        border-bottom: 0.2px solid #b4b4b4; }
+        #accountinfo .body .list .index .name, #accountinfo .body .list .info .name {
+          width: 25%;
+          left: 0;
+          position: absolute;
+          top: 50%;
+          padding: 0 1rem;
+          -ms-transform: translateY(-50%);
+          -webkit-transform: translateY(-50%);
+          transform: translateY(-50%);
+          word-wrap: break-word; }
+        #accountinfo .body .list .index .address, #accountinfo .body .list .info .address {
+          width: 40%;
+          left: 30%;
+          position: absolute;
+          top: 50%;
+          padding: 0 0.5rem;
+          -ms-transform: translateY(-50%);
+          -webkit-transform: translateY(-50%);
+          transform: translateY(-50%);
+          word-wrap: break-word; }
+        #accountinfo .body .list .index i.edit, #accountinfo .body .list .info i.edit {
+          width: 15%;
+          left: 70%;
+          position: absolute;
+          top: 50%;
+          padding: 0 0.5rem;
+          -ms-transform: translateY(-50%);
+          -webkit-transform: translateY(-50%);
+          transform: translateY(-50%);
+          z-index: 5; }
+        #accountinfo .body .list .index i.delete, #accountinfo .body .list .info i.delete {
+          width: 15%;
+          left: 85%;
+          position: absolute;
+          top: 50%;
+          padding: 0 0.5rem;
+          -ms-transform: translateY(-50%);
+          -webkit-transform: translateY(-50%);
+          transform: translateY(-50%);
+          z-index: 5; }
+        #accountinfo .body .list .index i.cancel, #accountinfo .body .list .info i.cancel {
+          width: 15%;
+          left: 70%;
+          position: absolute;
+          top: 50%;
+          padding: 0 0.5rem;
+          -ms-transform: translateY(-50%);
+          -webkit-transform: translateY(-50%);
+          transform: translateY(-50%);
+          z-index: 5; }
+        #accountinfo .body .list .index i.update, #accountinfo .body .list .info i.update {
+          width: 15%;
+          left: 85%;
+          position: absolute;
+          top: 50%;
+          padding: 0 0.5rem;
+          -ms-transform: translateY(-50%);
+          -webkit-transform: translateY(-50%);
+          transform: translateY(-50%);
+          z-index: 5; }
+      #accountinfo .body .list .info {
+        font-weight: normal;
+        height: 7rem;
+        -webkit-transition: 0.5s;
+        -moz-transition: 0.5s;
+        -o-transition: 0.5s;
+        -ms-transition: 0.5s;
+        transition: 0.5s; }
+        #accountinfo .body .list .info:hover {
+          background: rgba(0, 255, 204, 0.3);
+          box-shadow: 0.1rem 0.1rem 0.5rem 0.1rem #b4b4b4;
+          border: none; }
+    #accountinfo .body .add {
+      width: 100%;
+      height: 100vh;
+      position: absolute;
+      margin-left: 180%; }
+      #accountinfo .body .add .input {
+        width: 80%; }
+        #accountinfo .body .add .input label {
+          clear: left;
+          margin: 5rem 0 1rem 2rem;
+          width: 100%;
+          color: #323232;
+          font-size: 1rem;
+          font-weight: 400;
+          height: 1.5rem; }
+        #accountinfo .body .add .input input {
+          clear: left;
+          margin: 1rem 0 3rem 2rem;
+          width: 100%;
+          color: #323232;
+          font-size: 1.5rem;
+          font-weight: 300;
+          outline: none;
+          border: none;
+          border-bottom: 1.5px solid #b4b4b4;
+          -webkit-transition: 0.5s;
+          -moz-transition: 0.5s;
+          -o-transition: 0.5s;
+          -ms-transition: 0.5s;
+          transition: 0.5s; }
+          #accountinfo .body .add .input input:focus {
+            border-bottom: 1.5px solid #00c8b4; }
+        #accountinfo .body .add .input .message_alert {
+          clear: left;
+          position: relative;
+          color: #ff3399;
+          left: 2rem;
+          top: -2rem; }
+      #accountinfo .body .add .select-wrap {
+        clear: left;
+        margin: 1rem 0 3rem 2rem;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        min-width: 6em;
+        background-color: #eeeeee;
+        border: none;
+        color: #333; }
+      #accountinfo .body .add .select-wrap select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        position: relative;
+        z-index: 2;
+        display: block;
+        width: 200%;
+        width: -webkit-calc(100% + 5em);
+        margin: 0;
+        padding: 11px 35px 11px 11px;
+        padding: .6875rem 2.1875rem .6875rem .6875rem;
+        background: #eeeeee;
+        border: none;
+        outline: none;
+        font-size: 16px;
+        font-size: 1rem;
+        line-height: 1.5; }
+      #accountinfo .body .add .btn_container {
+        clear: left;
+        display: flex;
+        -webkit-justify-content: space-around;
+        justify-content: space-around; }
+      #accountinfo .body .add .btn {
+        margin-right: auto;
+        margin-left: auto;
+        padding: 1rem;
+        text-align: center;
+        color: #f0f0f0;
+        border: none;
+        outline: none;
+        background: #00c8b4;
+        -webkit-transition: 0.3s;
+        -moz-transition: 0.3s;
+        -o-transition: 0.3s;
+        -ms-transition: 0.3s;
+        transition: 0.3s;
+        box-shadow: 0.1rem 0.1rem 0.5rem 0.1rem #b4b4b4; }
+        #accountinfo .body .add .btn:hover {
+          background: #f0f0f0;
+          color: #00c8b4;
+          border: solid 1px #00c8b4;
+          box-shadow: none; }
+    #accountinfo .body .show-add {
+      -webkit-appearance: none;
+      position: fixed;
+      z-index: 10;
+      background: #ff3399;
+      bottom: 5vh;
+      right: 10%;
+      box-shadow: 0.1rem 0.1rem 0.5rem 0.1rem #b4b4b4; }
