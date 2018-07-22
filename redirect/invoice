@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirect</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, height=device-height">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+</head>
+<body>
+    <script type="text/javascript">
+        window.onload = function(){
+            if (navigator.userAgent.match(/(Android)/)) {
+                location.href= "intent://"+ location.hostname +"/invoice#Intent;scheme=https;package=com.android.chrome;end";
+            }
+            else if(navigator.userAgent.match(/(iPhone|iPod|iPad|BlackBerry)/)){
+                location.href= "googlechromes://"+ location.hostname +"/invoice";
+            }
+            else{
+                location.href= "https://" + location.hostname + '/invoice';
+            }
+        }
+        </script>
+</body>
+</html>

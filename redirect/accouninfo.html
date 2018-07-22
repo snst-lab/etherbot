@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Redirect to Account Information</title>
+    <title>Redirect</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, height=device-height">
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -10,10 +10,10 @@
     <script type="text/javascript">
         window.onload = function(){
             if (navigator.userAgent.match(/(Android)/)) {
-                location.href= "intent://etherbot.glitch.me/accountinfo#Intent;scheme=https;package=com.android.chrome;end";
+                location.href= "intent://"+ location.hostname +"/accountinfo#Intent;scheme=https;package=com.android.chrome;end";
             }
             else if(navigator.userAgent.match(/(iPhone|iPod|iPad|BlackBerry)/)){
-                location.href= "googlechromes://etherbot.glitch.me/accountinfo";
+                location.href= "googlechromes://"+ location.hostname +"/accountinfo";
             }
             else{
                 location.href= "https://" + location.hostname + '/accountinfo';
