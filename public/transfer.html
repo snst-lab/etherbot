@@ -377,68 +377,68 @@
                 }
             },
 
-            showTransactionHistory: function(){
+           showTransactionHistory: function(){
                 if (typeof localStorage.addressList !== 'undefined') {
-                    var addressList = JSON.parse(localStorage.getItem("addressList"));
-                    var transactionListRaw = [];
-                    addressList.forEach((key)=>{
-                        Array.prototype.push.apply(transactionListRaw, model.ether.getTransactionHistory(key.chain,key.address));
-                    });
-                    var transactionList = util.distinctArrayByKey(transactionListRaw,'hash')
-                    transactionList.sort(function(a, b) {
-                        return (a.timeStamp < b.timeStamp) ? 1 : -1; //desc
-                    });
-                    view.showTransactionHistory(transactionList);
+                      var addressList = JSON.parse(localStorage.getItem("addressList"));
+                      var transactionListRaw = [];
+                      addressList.forEach((key)=>{
+                           Array.prototype.push.apply(transactionListRaw, model.ether.getTransactionHistory(key.chain,key.address));
+                      });
+                      var transactionList = util.distinctArrayByKey(transactionListRaw,'hash')
+                      transactionList.sort(function(a, b) {
+                          return (a.timeStamp < b.timeStamp) ? 1 : -1; //desc
+                      });
+                      view.showTransactionHistory(transactionList);
                 }
                 else {
-                    return false;
+                      return false;
                 }
             },
 
             setAddressList: function(){
                 if (typeof localStorage.recipientList !== 'undefined') {
-                    var addressList = JSON.parse(localStorage.getItem("recipientList"));
-                    addressList.sort(function(a, b) {
-                        return (a.name < b.name) ? -1 : 1; //asc
-                    });
-                    view.setAddressList(addressList);
+                      var addressList = JSON.parse(localStorage.getItem("recipientList"));
+                      addressList.sort(function(a, b) {
+                          return (a.name < b.name) ? -1 : 1; //asc
+                      });
+                      view.setAddressList(addressList);
                 }
                 else {
-                    return false;
+                      return false;
                 }
             },
 
             deleteAddress: function(address){
                 if (typeof localStorage.recipientList !== 'undefined') {
-                    var addressList = JSON.parse(localStorage.getItem("recipientList"));
-                    var addressArray =[];
-                    addressList.forEach((key)=>{
+                      var addressList = JSON.parse(localStorage.getItem("recipientList"));
+                      var addressArray =[];
+                      addressList.forEach((key)=>{
                             addressArray.push(key.address);
-                    });
-                    var idx = addressArray.indexOf(address);
-                    addressList.splice(idx,1);
-                    localStorage.setItem("recipientList", JSON.stringify(addressList));
-                    model.setAddressList();
+                      });
+                      var idx = addressArray.indexOf(address);
+                      addressList.splice(idx,1);
+                      localStorage.setItem("recipientList", JSON.stringify(addressList));
+                      model.setAddressList();
                 }
                 else {
-                    return false;
+                      return false;
                 }
             },
 
             updateName: function(name,address){
                 if (typeof localStorage.recipientList !== 'undefined') {
-                    var addressList = JSON.parse(localStorage.getItem("recipientList"));
-                    var addressArray =[];
-                    addressList.forEach((key)=>{
+                      var addressList = JSON.parse(localStorage.getItem("recipientList"));
+                      var addressArray =[];
+                      addressList.forEach((key)=>{
                             addressArray.push(key.address);
-                    });
-                    var idx = addressArray.indexOf(address);
-                    addressList[idx] = {"name":name,"chain":addressList[idx].chain,"address":address};
-                    localStorage.setItem("recipientList", JSON.stringify(addressList));
-                    model.setAddressList();
+                      });
+                      var idx = addressArray.indexOf(address);
+                      addressList[idx] = {"name":name,"chain":addressList[idx].chain,"address":address};
+                      localStorage.setItem("recipientList", JSON.stringify(addressList));
+                      model.setAddressList();
                 }
                 else {
-                    return false;
+                      return false;
                 }
             },
 
@@ -446,21 +446,21 @@
                 var newAddress = {"name":name,"chain":chain,"address":address};
 
                 if (typeof localStorage.recipientList !== 'undefined') {
-                    var addressList = JSON.parse(localStorage.getItem("recipientList"));
-                    var addressArray =[];
-                    addressList.forEach((key)=>{
+                      var addressList = JSON.parse(localStorage.getItem("recipientList"));
+                      var addressArray =[];
+                      addressList.forEach((key)=>{
                             addressArray.push(key.address);
-                    });
-                    var idx = addressArray.indexOf(newAddress.address);
-                    if (idx == -1) {
+                      });
+                      var idx = addressArray.indexOf(newAddress.address);
+                      if (idx == -1) {
                             addressList.push(newAddress);
                             localStorage.setItem("recipientList", JSON.stringify(addressList));
                             model.setAddressList();
                             view.showList();
-                    }
-                    else{
+                      }
+                      else{
                             return false;
-                    }
+                      }
                 }
                 else {
                     var addressList = [];
@@ -472,12 +472,12 @@
 
             transfer: function(chain,secret,sendTo,amount,gas){
                 model.ether.transfer(chain,secret,sendTo,amount,gas).then(function(txHash){
-                    alert('Payment completes successfully.');
-                    model.addAddress(util.dateString(),chain,sendTo);
-                    view.showList();
+                      alert('Payment completes successfully.');
+                      model.addAddress(util.dateString(),chain,sendTo);
+                      view.showList();
 
                 }).catch(function(err){
-                    alert(err);
+                      alert(err);
                 });
             }
 
@@ -573,30 +573,25 @@
                   const web3 = new Web3(new Web3.providers.HttpProvider(this.setChain(chain).node));
                   const currentBlock = web3.eth.blockNumber;
                   const reqBody = {
-                        'module':'account',
-                        'action':'txlist',
-                        'address':address,
-                        'startblock':0,
-                        'endblock':currentBlock,
-                        'page':1,
-                        'offset':10, //Max count of history
-                        'sort':'asc',
-                        'apikey':''
+                    'module':'account',
+                    'action':'txlist',
+                    'address':address,
+                    'startblock':0,
+                    'endblock':currentBlock,
+                    'page':1,
+                    'offset':10, //Max count of history
+                    'sort':'asc',
+                    'apikey':''
                   }
-                  $.ajax({
+                  const res = $.ajax({
                       url: this.setChain(chain).api,
                       type: "GET",
                       dataType: "json",
                       data: reqBody,
                       async:false,
-                  })
-                  .done((data, textStatus, jqXHR) => {
-                      sessionStorage.setItem("transactionList",JSON.stringify(data.result));
-                  })
-                  .fail((jqXHR, textStatus, errorThrown) => {
-                      console.log(jqXHR.responseText);
-                  });
-                  return JSON.parse(sessionStorage.getItem("transactionList"));
+                  }).responseText;
+
+                  return JSON.parse(res).result;
             }          
 
             Ether.prototype.transfer = function(chain,secret,sendTo,amount,gas){
@@ -641,7 +636,6 @@
                     });
                 });
              }
-
             return Ether;
         })();
 
