@@ -1,6 +1,6 @@
 "use strict";
 
-const util = require('./public/dist/util.js');
+const util = require('./lib/util.js');
 
 const Ether = function(){
     const Web3 = require('web3');
