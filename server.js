@@ -377,7 +377,6 @@ var Main = function(app){
               var status = util.queryParse(statusQuery);
           
               if(status['action']=='getbalance' && status['listen']=='chain'){
-                    console.log(message['chain']);   
                     if(typeof message['chain'] !== 'undefined'){
                         bot.writeDatabase(event.source.userId, 'action=getbalance&listen=address&chain=' + message['chain']);
                         event.replyText('Send '+ message['chain']+ ' Address.');

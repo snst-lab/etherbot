@@ -1,4 +1,6 @@
+/resource/*
+/archive/*
 deploy.bat
+fix.bat
 node_modules
-archive
 package-lock.json
