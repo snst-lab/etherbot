@@ -7,6 +7,6 @@
 [![Image of button](https://scdn.line-apps.com/n/line_add_friends/btn/ja.png)](https://line.me/R/ti/p/%40qdt4322c)
 
 ##  Screenshots
-<img align="left" width="30%" src="https://snst-lab.github.io/etherbot/public/img/screenshot1.JPG">
-<img align="left" width="30%" src="https://snst-lab.github.io/etherbot/public/img/screenshot2.JPG">
-<img align="left" width="30%" src="https://snst-lab.github.io/etherbot/public/img/screenshot3.JPG">
+<img align="left" width="30%" src="https://snst-lab.github.io/etherbot/public/img/screenshot1.jpg>
+<img align="left" width="30%" src="https://snst-lab.github.io/etherbot/public/img/screenshot2.jpg">
+<img align="left" width="30%" src="https://snst-lab.github.io/etherbot/public/img/screenshot3.jpg">
