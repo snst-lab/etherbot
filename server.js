@@ -1,6 +1,6 @@
 "use strict";
 
-const util = require('./public/dist/util.js');
+const util = require('./lib/util.js');
 
 const Ether = function(){
     const Web3 = require('web3');
@@ -326,7 +326,7 @@ var Main = function(app){
             case 'accountInfo':
                 event.replyFlex(
                     "Show Account Info",
-                    "https://pragma-curry.com/wp/wp-content/uploads/2018/07/Etherbot.png",
+                    "https://snst-lab.github.io/etherbot/public/img/icon.png",
                     "Click the button below to show your account information.",
                     "Show",
                     "https://etherbot.glitch.me/redirect/accountinfo"
@@ -335,7 +335,7 @@ var Main = function(app){
             case 'payment':
                 event.replyFlex(
                     "Payment",
-                    "https://pragma-curry.com/wp/wp-content/uploads/2018/07/Etherbot.png",
+                    "https://snst-lab.github.io/etherbot/public/img/icon.png",
                     "Click the button below to open URL.",
                     "Open URL",
                     "https://etherbot.glitch.me/redirect/transfer"
@@ -344,7 +344,7 @@ var Main = function(app){
             case 'invoice':
                 event.replyFlex(
                     "Manage Invoice",
-                    "https://pragma-curry.com/wp/wp-content/uploads/2018/07/Etherbot.png",
+                    "https://snst-lab.github.io/etherbot/public/img/icon.png",
                     "Click the button below to open URL.",
                     "Open URL",
                     "https://etherbot.glitch.me/redirect/invoice"
@@ -377,6 +377,7 @@ var Main = function(app){
               var status = util.queryParse(statusQuery);
           
               if(status['action']=='getbalance' && status['listen']=='chain'){
+                    console.log(message['chain']);   
                     if(typeof message['chain'] !== 'undefined'){
                         bot.writeDatabase(event.source.userId, 'action=getbalance&listen=address&chain=' + message['chain']);
                         event.replyText('Send '+ message['chain']+ ' Address.');
@@ -404,7 +405,7 @@ var Main = function(app){
         });
     }
     
-    app.listen(process.env.PORT || 80, () => {
+    app.listen(process.env.PORT || 3000, () => {
         console.log('Server is running.');
     });
     bot.onMessageEvent(this.onMessageEvent);
