@@ -1,6 +1,6 @@
 "use strict";
 
-const util = require('./lib/util.js');
+const util = require('./public/dist/util.js');
 
 const Ether = function(){
     const Web3 = require('web3');
@@ -310,7 +310,7 @@ var Main = function(app){
     bot.getAction = function(event,message){
         try{　
             if(typeof(message['action']) == 'undefined' || message['action']==''){
-                throw 'No Action Detected.';
+                throw 'No action detected.';
             }
             switch(message['action']){
             case 'getBalance':
@@ -351,7 +351,7 @@ var Main = function(app){
                 );
                 break;
             default:
-                throw 'No Action Detected.';
+                throw 'No action detected.';
                 break;
             }
 
@@ -366,7 +366,7 @@ var Main = function(app){
               var message = util.queryParse(event.message.text);      
               break;
            case 'postback':
-              var message = util.queryParse(event.postback.data);
+              var postback = util.queryParse(event.postback.data);
               break;
            default:
               event.replyText('The event type is not supported.');
@@ -376,32 +376,31 @@ var Main = function(app){
         bot.readDatabase(event.source.userId).then(function(statusQuery) {
               var status = util.queryParse(statusQuery);
           
-              if(status['action']=='getbalance' && status['listen']=='chain'){
-                    console.log(message['chain']);   
-                    if(typeof message['chain'] !== 'undefined'){
-                        bot.writeDatabase(event.source.userId, 'action=getbalance&listen=address&chain=' + message['chain']);
-                        event.replyText('Send '+ message['chain']+ ' Address.');
+              if(status['action']=='showbalance' && typeof status['listen'] !== 'undefined' && typeof postback !== 'undefined'){
+                    if(typeof postback['chain'] !== 'undefined'){
+                        bot.writeDatabase(event.source.userId, 'action=showbalance&listen=address&chain=' + postback['chain']);
+                        event.replyText('Send '+ postback['chain']+ ' Address.');
                     }
                     else{
-                        bot.writeDatabase(event.source.userId, null);
-                        event.replyText('Failed to select chain.');
+                        bot.writeDatabase(event.source.userId, 'action=null');
+                        event.replyText('Invalid command. Please start from the beginning.');
                     }
               }
-              else if(status['action']=='getbalance' && status['listen']=='address' && typeof status['chain'] !== 'undefined'){
+              else if(status['action']=='showbalance' && status['listen']=='address' && typeof status['chain'] !== 'undefined' && typeof event.message.text !== 'undefined' ){
                     ether.getBalance(status['chain'] , event.message.text).then(function(data){
                         event.replyText(data);
                     })
                     .catch(function(err){
                         event.replyText(err);
                     });
-                    bot.writeDatabase(event.source.userId, null);
+                    bot.writeDatabase(event.source.userId, 'action=null');
               }
               else{
                   bot.getAction(event,message);
               }
           
         }).catch(function (err) {
-            bot.getAction(event,message);
+            console.log(err);
         });
     }
     
