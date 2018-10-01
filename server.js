@@ -28,7 +28,7 @@ const Ether = function(){
 
     this.validateAddress = function(address){
         var valid = true;
-        if(String(address) == ''){
+        if(String(address) === ''){
             valid = false;
         }
         else if(
@@ -43,7 +43,7 @@ const Ether = function(){
 
     this.validatePrivKey = function(secret){
         var valid = true;
-        if(String(secret) == ''){
+        if(String(secret) === ''){
             valid = false;
         }
         else if(
@@ -252,10 +252,10 @@ const Linebot = function(app) {
       this.readDatabase = function(lineID,callback){
           return new Promise((resolve, reject) =>  {
               db.botstatus.findOne({ lineid: lineID }, (err, obj) =>{
-                   if(err == null && obj!=null){
+                   if(err===null && obj!==null){
                        resolve(obj.status);
                    }
-                   else if(err == null && obj==null){
+                   else if(err===null && obj===null){
                        resolve('action=null');
                    }
                    else{
@@ -267,7 +267,7 @@ const Linebot = function(app) {
 
       this.writeDatabase = function(lineID,status){
           db.botstatus.findOne({ lineid: lineID }, (err, obj) => {
-              if(obj==null){
+              if(obj===null){
                   db.botstatus.insert({'lineid':lineID,'status':status});  
               }
               else{
@@ -309,7 +309,7 @@ var Main = function(app){
   
     bot.getAction = function(event,message){
         try{　
-            if(typeof(message['action']) == 'undefined' || message['action']==''){
+            if(typeof(message['action']) === 'undefined' || message['action']===''){
                 throw 'No action detected.';
             }
             switch(message['action']){
@@ -376,7 +376,7 @@ var Main = function(app){
         bot.readDatabase(event.source.userId).then(function(statusQuery) {
               var status = util.queryParse(statusQuery);
           
-              if(status['action']=='showbalance' && typeof status['listen'] !== 'undefined' && typeof postback !== 'undefined'){
+              if(status['action']==='showbalance' && typeof status['listen'] !== 'undefined' && typeof postback !== 'undefined'){
                     if(typeof postback['chain'] !== 'undefined'){
                         bot.writeDatabase(event.source.userId, 'action=showbalance&listen=address&chain=' + postback['chain']);
                         event.replyText('Send '+ postback['chain']+ ' Address.');
@@ -386,7 +386,7 @@ var Main = function(app){
                         event.replyText('Invalid command. Please start from the beginning.');
                     }
               }
-              else if(status['action']=='showbalance' && status['listen']=='address' && typeof status['chain'] !== 'undefined' && typeof event.message.text !== 'undefined' ){
+              else if(status['action']==='showbalance' && status['listen']==='address' && typeof status['chain'] !== 'undefined' && typeof event.message.text !== 'undefined' ){
                     ether.getBalance(status['chain'] , event.message.text).then(function(data){
                         event.replyText(data);
                     })
